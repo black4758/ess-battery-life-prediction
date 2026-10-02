@@ -1,7 +1,8 @@
 ﻿구분,MAPE (%),비고
-Train (Batch 1 CV),8.40,Batch 1 5-Fold 교차검증 평균
-Valid (Batch 1 Hold-out),6.60,프로토콜 독립 분리 검증 (20%)
-Test (Batch 2),12.09,1차 필수 테스트셋 (RMSE: 120.5)
-Gap (Train-Valid),-1.80,과적합 여부 확인 (음수=과적합 없음)
-Gap (Valid-Test),+5.50,배치 간 일반화 격차
-Gap (Target-Test),+2.99,원논문 목표(9.1%) 대비 격차
+실험 1 (어제 3대 피처),36.63%,10분 고정 실험으로 chargetime 변별력 상실 확인 (36.5%)
+Train (Batch 1 CV),8.40%,실험 2: Batch 1 5-Fold 교차검증 평균
+Valid (Batch 1 Hold-out),6.60%,실험 2: 프로토콜 독립 분리 검증 (20%)
+Test (Batch 2),12.09%,실험 2: 1차 필수 테스트셋 최종 성능 (RMSE: 120.5)
+Gap (Train-Valid),-1.80%,과적합 여부 확인 (음수=과적합 없음)
+Gap (Valid-Test),+5.50%,배치 간 일반화 격차 (팬 고장 환경 영향)
+Gap (Target-Test),+2.99%,원논문 목표(9.1%) 대비 최종 격차 (단 2.99% 차이)
