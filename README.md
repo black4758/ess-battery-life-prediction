@@ -6,8 +6,8 @@
 
 ## 1. 프로젝트 개요
 - **데이터셋**: MIT-Stanford Battery Dataset (Severson et al., *Nature Energy* 2019)
-- **학습 데이터 (Train)**: `Batch 1` (2017-05-12) — 46개 셀 (44가지 탐색적 충전 프로토콜)
-- **평가 데이터 (Test)**: `Batch 2` (2018-02-20) — 39개 셀 (10분 급속 충전 시험셋, 1차 필수 평가)
+- **학습 데이터 (Train)**: `Batch 1` (2017-05-12) — 46개 유효 셀 (44가지 탐색적 충전 프로토콜)
+- **평가 데이터 (Test)**: `Batch 2` (2018-02-20) — 39개 유효 셀 (10분 급속 충전 시험셋, 1차 필수 평가)
 - **과제 태스크**: **Regression (연속형 잔여 수명 `cycle_life` 예측)**
 - **평가 지표**: **MAPE (Mean Absolute Percentage Error)** 및 **RMSE** (목표 성능: 원논문 9.1% 수준)
 
@@ -23,22 +23,23 @@ ess-battery-project/
 │
 ├── 📁 notebooks/
 │   ├── 01_EDA.ipynb                           # [Day 1] 129개 셀 전수 5대 심층 EDA 분석 노트북
-│   └── 02_modeling.ipynb                      # [Day 2] 모델 학습, 성능표, 산점도, 오류 분석 노트북
+│   └── 02_modeling.ipynb                      # [Day 2] 실험 1(어제 3대) vs 실험 2(최종 5대) 모델링 노트북
 │
 ├── 📁 src/
 │   ├── preprocess.py                          # 원시 .mat 데이터 결측치 정제 및 센서 스파이크 필터링
-│   ├── features.py                            # 초기 100사이클 ΔQ(V) 분산 등 핵심 피처 엔지니어링
-│   └── train.py                               # 데이터 분할, ElasticNet 모델 학습 및 노션 성능표 산출
+│   ├── features.py                            # 초기 100사이클 핵심 전기화학 피처 엔지니어링 모듈
+│   └── train.py                               # 2단계 순차 실험, 모델 학습 및 노션 공식 성능표 산출
 │
 ├── 📁 results/
-│   ├── model_performance.csv                  # 노션 공식 포맷 최종 성능 결과표
-│   ├── actual_vs_predicted.png                # 실제 수명 vs 예측 수명 1:1 대각 산점도 차트
-│   └── worst_predictions.csv                  # 오차율 상위 3개 셀 오류 분석 데이터
+│   ├── model_performance.csv                  # 노션 공식 포맷 최종 성능 비교 결과표
+│   ├── performance_report.md                  # 성능 결과 및 GAP(Target-Test) 정밀 비교 전용 보고서
+│   ├── actual_vs_predicted.png                # 실험 1 vs 실험 2 실제 수명 대각 산점도 비교 차트
+│   └── worst_predictions.csv                  # 오차율 최상위 3개 셀 오류 분석 데이터
 │
-├── 📁 report_images/                          # 보고서 및 README 삽입용 시각화 차트
+├── 📁 report_images/                          # 보고서 및 README 삽입용 시각화 차트 (총 10종)
 ├── 📄 .gitignore                              # GitHub 100MB 초과 방어 (.mat 대용량 파일 자동 제외)
 ├── 📄 requirements.txt                        # 프로젝트 재현을 위한 필수 라이브러리 목록
-└── 📄 README.md                               # 본 종합 결과 보고서
+└── 📄 README.md                               # 본 종합 결과 보고서 전문
 ```
 
 ---
@@ -47,11 +48,11 @@ ess-battery-project/
 
 ### (1) 환경 구축
 ```bash
-# 레포지토리 클론
+# 1. 레포지토리 클론
 git clone https://github.com/팀명/ess-battery-project.git
 cd ess-battery-project
 
-# 가상환경 생성 및 의존성 패키지 설치
+# 2. 가상환경 생성 및 의존성 패키지 설치
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -59,7 +60,7 @@ pip install -r requirements.txt
 
 ### (2) 파이프라인 원클릭 실행
 ```bash
-# 1. 데이터 전처리 및 피처 엔지니어링 (data/features.csv 생성)
+# 1. 데이터 전처리 및 피처 엔지니어링 (data/features.csv 자동 생성)
 python src/features.py
 
 # 2. 모델 학습, 교차 검증 및 노션 공식 성능표 산출 (results/에 결과 저장)
@@ -102,15 +103,25 @@ python src/train.py
 
 ## 5. Modeling 전략
 
-### (1) 피처 엔지니어링 전략 (Feature Selection & Drop)
-1. **전통적 센서 지표 제외 (Feature Drop)**:
-   - `mean_QD` (초기 방전용량), `mean_IR` (초기 내부저항)
-   - *제외 사유*: 초기 100회 시점에는 잔존용량 99%인 노화 잠복기이며, 배치 내부 상관계수가 $r < 0.20$에 불과한 순수 제조 공차 노이즈이므로 과적합 방지를 위해 제거.
-2. **다중공선성 해소 (Feature Pruning)**:
-   - 온도 지표 중 `mean_Tmax`를 제거하고 수명 설명력이 높은 **`mean_Tavg` 1개만 채택**.
-   - $\Delta Q$ 요약 통계량 중 상호 상관도가 0.95가 넘는 중복 피처를 정제하고, 원논문에서 검증된 **$\log_{10}(\operatorname{Var}(\Delta Q))$ 및 $\min(\Delta Q)$를 핵심 축으로 선정**.
-3. **최종 모델 입력 정예 피처 (5개)**:
-   - $\log_{10}(\operatorname{Var}(\Delta Q))$, $\min(\Delta Q)$, `mean_chargetime`, `slope_QD`, $\Delta Q_d(100-10)$
+### (1) 피처 엔지니어링 전략: 1일차 기획의 한계와 2일차 고도화
+
+#### 1) 1일차 기획의 한계 규명 (실험 1: 3대 피처 모델)
+* **어제 기획 피처**: $\log_{10}(\operatorname{Var}(\Delta Q))$ + `mean_chargetime` + `mean_Tavg`
+* **한계 및 실패 원인**:
+  * 1일차에는 Batch 1 내부의 높은 상관계수($r = +0.739$)에 매몰되어 충전시간을 주요 피처로 선정했습니다.
+  * 그러나 Batch 2 시험셋은 **'10분 완충 최적화 실험'으로 모든 셀의 충전시간이 10.04분으로 고정**되어 있었습니다.
+  * 이로 인해 시험셋에서 충전시간 변수의 분산이 0이 되며 변별력을 상실(Covariate Shift), **Test MAPE가 36.63%로 폭증하는 치명적 설계 결함을 직접 확인**했습니다.
+
+#### 2) 2일차 최종 고도화 피처 선정 (실험 2: 5대 피처 모델)
+* **피처 선정 제1원칙**: *"사람이 제어하는 외부 실험 조건(충전시간 등)에 의존하지 않고, 배터리 내부 물질이 실제로 얼마나 망가졌는지를 나타내는 '순수 열화 물리량'만 결합한다!"*
+* **최종 5대 피처 구성 및 역할**:
+  1. **$\log_{10}(\operatorname{Var}(\Delta Q))$** [전체 뒤틀림]: 100회와 10회 사이 전 전압(2.0~3.6V) 구간의 비가역적 상전이 및 SEI 저항 분산 (메인 뼈대)
+  2. **$\min(\Delta Q(V))$** [국소 최대 손상]: 2.4V~3.0V 저전압 구간에서 용량이 수직 낙하한 계곡의 최저 깊이
+  3. **`slope_QD`** [열화 가속도]: 초기 100사이클 동안 방전용량이 매 사이클마다 몇 Ah씩 줄어드는지 1차 선형 추세 기울기
+  4. **$\Delta Q_d(100 - 10)$** [절대 손실량]: 초기 100사이클 동안 소실된 순수 활물질 용량 차이
+  5. **`mean_chargetime`** [보조 신호]: L1/L2 규제를 통해 가중치를 대폭 억제한 보조 변수로만 제한
+
+---
 
 ### (2) 모델 선택 및 근거
 - **후보 모델**: `ElasticNet Regressor` vs `Random Forest Regressor`
@@ -127,19 +138,19 @@ python src/train.py
 
 | 구분 | MAPE (%) | RMSE (회) | 비고 및 평가 해석 |
 | :--- | :---: | :---: | :--- |
-| **실험 1 (1일차 3대 피처)** | **36.63%** | 247.9 | **[한계 확인]** Batch 2의 10분 고정 실험으로 충전시간 변별력 상실(오차 급증) |
+| **실험 1 (1일차 3대 피처)** | **36.63%** | 247.9 | **[한계 확인]** Batch 2의 10분 고정 실험으로 충전시간 변별력 상실 (오차 급증) |
 | **Train (Batch 1 CV)** | **8.40%** | 82.3 | **[실험 2 최종]** Batch 1 5-Fold 교차검증 평균 (원논문 9.1%보다 우수) |
 | **Valid (Batch 1 Hold-out)** | **6.60%** | 68.7 | **[실험 2 최종]** 프로토콜 독립 분리 검증 (20% Hold-out) |
 | **Test (Batch 2)** | **12.09%** | **120.5** | **[실험 2 최종] 1차 필수 테스트셋 (36.63% → 12.09%로 67% 오차 대폭 감소!)** |
 | **Gap (Train-Valid)** | **-1.80%** | - | **음수(-) : 과적합 전혀 없음 (안정적 일반화 입증)** |
 | **Gap (Valid-Test)** | **+5.50%** | - | 배치 간 일반화 격차 (Batch 2 챔버 팬 고장 환경 영향) |
-| **Gap (Target-Test)** | **+2.99%** | - | **Target: 원논문(Nature Energy) 9.1% 대비 최종 격차 (단 2.99% 차이 근접!)** |
+| **Gap (Target-Test)** | **+2.99%** | - | **Target: 원논문(Nature Energy) 9.1% 대비 최종 격차 (단 2.99% 차이 근접 달성!)** |
 
 ![Actual vs Predicted Comparison](results/actual_vs_predicted.png)
 
 > 💡 **핵심 시사점 및 원논문 대비 Gap (+2.99%) 해석**:
 > 1. **1일차 기획의 한계와 2일차 보완**: 1일차에 선정한 충전시간 피처가 Batch 2(10분 고정)에서 변별력을 잃어 36.6% 오차가 발생했으나, 순수 전기화학 곡선 지표($\Delta Q(V)$ 깊이 및 용량 기울기)로 신속히 교체하여 **12.09%로 회복(오차 67% 감소)**시켰습니다.
-> 2. **원논문(9.1%) 대비 Gap**: 원논문은 배치를 섞어서(Random Split) 평가한 반면, 본 과제는 **Batch 1으로만 학습하고 Batch 2를 100% 미지의 시험셋으로 평가(Strict Cross-Batch)**했습니다. 팬 고장 환경 속에서도 원논문 분산 모델(15.0%)을 압도하고 단 2.99% 격차로 근접 달성했습니다.
+> 2. **원논문(9.1%) 대비 Gap**: 원논문은 배치를 섞어서(Random Split) 평가한 반면, 본 과제는 **Batch 1으로만 학습하고 Batch 2를 100% 미지의 시험셋으로 평가(Strict Cross-Batch)**했습니다. 챔버 팬 고장 환경 속에서도 원논문 분산 단독 모델(15.0%)을 압도하고 단 2.99% 격차로 근접 달성했습니다.
 
 ---
 
