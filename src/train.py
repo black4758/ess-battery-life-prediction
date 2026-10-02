@@ -13,6 +13,16 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import platform
+
+# 한글 폰트 깨짐 방지 및 마이너스 기호 설정
+if platform.system() == 'Darwin':
+    plt.rcParams['font.family'] = 'AppleGothic'
+elif platform.system() == 'Windows':
+    plt.rcParams['font.family'] = 'Malgun Gothic'
+else:
+    plt.rcParams['font.family'] = 'NanumGothic'
+plt.rcParams['axes.unicode_minus'] = False
 
 from sklearn.linear_model import ElasticNet, LinearRegression
 from sklearn.ensemble import RandomForestRegressor
