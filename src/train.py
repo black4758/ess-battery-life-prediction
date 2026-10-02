@@ -141,13 +141,13 @@ def train_and_evaluate(features_csv: str = 'data/features.csv', results_dir: str
     # 3. 노션 공식 포맷 성능 비교 결과표 산출
     # ==============================================================================
     perf_rows = [
-        {"구분": "실험 1 (어제 3대 피처)", "MAPE (%)": f"{test_mape_day1:.2f}%", "비고": "10분 고정 실험으로 chargetime 변별력 상실 확인 (36.5%)"},
-        {"구분": "Train (Batch 1 CV)", "MAPE (%)": f"{train_cv_day2:.2f}%", "비고": "실험 2: Batch 1 5-Fold 교차검증 평균"},
-        {"구분": "Valid (Batch 1 Hold-out)", "MAPE (%)": f"{valid_ho_day2:.2f}%", "비고": "실험 2: 프로토콜 독립 분리 검증 (20%)"},
+        {"구분": "실험 1 (어제 3대 피처)", "MAPE (%)": f"{test_mape_day1:.2f}%", "비고": "10분 고정 실험으로 chargetime 변별력 상실 확인 (36.6%)"},
+        {"구분": "Train (Batch 1 CV)", "MAPE (%)": f"{train_cv_day2:.2f}%", "비고": "실험 2: Batch 1 5-Fold 교차검증 평균 (학습셋 내부 검증)"},
+        {"구분": "Valid (Batch 1 Hold-out)", "MAPE (%)": f"{valid_ho_day2:.2f}%", "비고": "실험 2: 프로토콜 독립 분리 검증 (20% Hold-out)"},
         {"구분": "Test (Batch 2)", "MAPE (%)": f"{test_mape_day2:.2f}%", "비고": f"실험 2: 1차 필수 테스트셋 최종 성능 (RMSE: {test_rmse_day2:.1f})"},
-        {"구분": "Gap (Train-Valid)", "MAPE (%)": f"{gap_train_val:+.2f}%", "비고": "과적합 여부 확인 (음수=과적합 없음)"},
-        {"구분": "Gap (Valid-Test)", "MAPE (%)": f"{gap_val_test:+.2f}%", "비고": "배치 간 일반화 격차 (팬 고장 환경 영향)"},
-        {"구분": "Gap (Target-Test)", "MAPE (%)": f"{gap_target_test:+.2f}%", "비고": "원논문 목표(9.1%) 대비 최종 격차 (단 2.99% 차이)"}
+        {"구분": "Gap (Train-Valid)", "MAPE (%)": f"{gap_train_val:+.2f}%", "비고": "음수(-) : 과적합 없음 (Valid 6.60% - Train 8.40%)"},
+        {"구분": "Gap (Valid-Test)", "MAPE (%)": f"{gap_val_test:+.2f}%", "비고": "(+) : 배치 간 일반화 저하 확인 (팬 고장 환경 영향)"},
+        {"구분": "Gap (Target-Test)", "MAPE (%)": f"{gap_target_test:+.2f}%", "비고": "Target: 원논문(9.1%) 대비 최종 격차 (+2.99%)"}
     ]
     perf_df = pd.DataFrame(perf_rows)
     perf_df.to_csv(os.path.join(results_dir, 'model_performance.csv'), index=False, encoding='utf-8-sig')
