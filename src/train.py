@@ -2,7 +2,7 @@
 [모델 학습 및 성능 평가 모듈: src/train.py]
 
 역할:
-1. [실험 1: 1일차 기획 모델] 어제 선정한 정예 3대 피처(Var_dQ, chargetime, Tavg) 학습 및 한계점(Batch 2 10분 고정으로 오차 36.5% 발생) 확인
+1. [실험 1: 1일차 기획 모델] 어제 선정한 정예 3개 피처(Var_dQ, chargetime, Tavg) 학습 및 한계점(Batch 2 10분 고정으로 오차 36.5% 발생) 확인
 2. [실험 2: 2일차 고도화 모델] 순수 전기화학 열화 지표(min_dQ, slope_QD 등)를 보강하여 최종 12.09%로 오차 대폭 개선 달성
 3. 노션 공식 포맷 성능 비교 결과표 산출 및 results/ 저장
 4. 실제값 vs 예측값 산점도(actual_vs_predicted.png) 및 오류 분석(worst_predictions.csv) 생성
@@ -56,10 +56,10 @@ def train_and_evaluate(features_csv: str = 'data/features.csv', results_dir: str
     y_b2 = b2_df['cycle_life'].values
 
     # ==============================================================================
-    # [실험 1] 1일차 기획 모델: 정예 3대 피처 (Var_dQ, chargetime, Tavg)
+    # [실험 1] 1일차 기획 모델: 정예 3개 피처 (Var_dQ, chargetime, Tavg)
     # ==============================================================================
     print("==================================================================")
-    print("🧪 [실험 1] 1일차 기획 모델 검증 (어제 선정한 3대 피처)")
+    print("🧪 [실험 1] 1일차 기획 모델 검증 (어제 선정한 3개 피처)")
     print("==================================================================")
     feats_day1 = ['log10_Var_dQ', 'mean_chargetime', 'mean_Tavg']
     print(f"• 입력 피처: {feats_day1}")
@@ -141,7 +141,7 @@ def train_and_evaluate(features_csv: str = 'data/features.csv', results_dir: str
     # 3. 노션 공식 포맷 성능 비교 결과표 산출
     # ==============================================================================
     perf_rows = [
-        {"구분": "실험 1 (어제 3대 피처)", "MAPE (%)": f"{test_mape_day1:.2f}%", "비고": "10분 고정 실험으로 chargetime 변별력 상실 확인 (36.6%)"},
+        {"구분": "실험 1 (어제 3개 피처)", "MAPE (%)": f"{test_mape_day1:.2f}%", "비고": "10분 고정 실험으로 chargetime 변별력 상실 확인 (36.6%)"},
         {"구분": "Train (Batch 1 CV)", "MAPE (%)": f"{train_cv_day2:.2f}%", "비고": "실험 2: Batch 1 5-Fold 교차검증 평균 (학습셋 내부 검증)"},
         {"구분": "Valid (Batch 1 Hold-out)", "MAPE (%)": f"{valid_ho_day2:.2f}%", "비고": "실험 2: 프로토콜 독립 분리 검증 (20% Hold-out)"},
         {"구분": "Test (Batch 2)", "MAPE (%)": f"{test_mape_day2:.2f}%", "비고": f"실험 2: 1차 필수 테스트셋 최종 성능 (RMSE: {test_rmse_day2:.1f})"},
@@ -158,7 +158,7 @@ def train_and_evaluate(features_csv: str = 'data/features.csv', results_dir: str
     print(perf_df.to_string(index=False))
 
     # ==============================================================================
-    # 4. 시각화: 실험 1 (3대 피처) vs 실험 2 (최종 모델) 비교 차트
+    # 4. 시각화: 실험 1 (3개 피처) vs 실험 2 (최종 모델) 비교 차트
     # ==============================================================================
     fig, axes = plt.subplots(1, 2, figsize=(14, 6), dpi=120)
 
@@ -168,7 +168,7 @@ def train_and_evaluate(features_csv: str = 'data/features.csv', results_dir: str
 
     axes[0].scatter(y_b2, pred_b2_day1, color='gray', edgecolor='black', alpha=0.7, s=60)
     axes[0].plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=1.5, label='Ideal 1:1 Line')
-    axes[0].set_title(f'[실험 1] 어제 3대 피처 (Test MAPE={test_mape_day1:.1f}%)', fontsize=12)
+    axes[0].set_title(f'[실험 1] 어제 3개 피처 (Test MAPE={test_mape_day1:.1f}%)', fontsize=12)
     axes[0].set_xlabel('실제 수명 (Actual)', fontsize=10)
     axes[0].set_ylabel('예측 수명 (Predicted)', fontsize=10)
     axes[0].legend()
