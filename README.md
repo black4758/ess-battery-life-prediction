@@ -16,7 +16,7 @@
 ## 2. 파일 구조 (Repository Architecture)
 
 ```text
-ess-battery-project/
+ess-battery-life-prediction/
 ├── 📁 data/
 │   ├── features.csv                           # 정제된 85개 셀의 머신러닝 정형 피처 테이블
 │   └── README.md                              # 원천 대용량 .mat 데이터 명세 및 다운로드 가이드
@@ -49,8 +49,8 @@ ess-battery-project/
 ### (1) 환경 구축
 ```bash
 # 1. 레포지토리 클론
-git clone https://github.com/팀명/ess-battery-project.git
-cd ess-battery-project
+git clone https://github.com/black4758/ess-battery-life-prediction.git
+cd ess-battery-life-prediction
 
 # 2. 가상환경 생성 및 의존성 패키지 설치
 python3 -m venv .venv
